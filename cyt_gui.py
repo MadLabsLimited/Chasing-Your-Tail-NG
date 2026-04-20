@@ -253,7 +253,23 @@ class CYTGui:
             command=self.surveillance_analysis_threaded
         )
         self.surveillance_btn.pack(side=tk.LEFT, padx=(0, 10))
-        
+
+        # Signal monitor button (TPMS / BT / ANT+ / Meshtastic)
+        self.signal_btn = tk.Button(
+            bottom_row,
+            text="📡 Signal\nMonitor",
+            font=('Arial', 9, 'bold'),
+            width=12,
+            height=2,
+            fg='#ffffff',
+            bg='#17a2b8',
+            activebackground='#138496',
+            relief='raised',
+            bd=3,
+            command=self.signal_monitor_threaded
+        )
+        self.signal_btn.pack(side=tk.LEFT, padx=(0, 10))
+
         # Quit button
         self.quit_btn = tk.Button(
             bottom_row,
@@ -697,6 +713,81 @@ class CYTGui:
         finally:
             self.surveillance_btn.config(state='normal', text='🗺️ Surveillance\nAnalysis')
             
+    def signal_monitor_threaded(self):
+        """Toggle signal monitor on/off."""
+        if 'signal' in self.running_processes:
+            # Already running — stop it
+            self.log_message("🛑 Stopping signal monitor...")
+            try:
+                proc = self.running_processes.pop('signal')
+                proc.terminate()
+            except Exception as e:
+                self.log_message(f"⚠️ Stop error: {e}")
+            self.signal_btn.config(
+                state='normal',
+                text="📡 Signal\nMonitor",
+                bg='#17a2b8'
+            )
+            return
+
+        self.log_message("📡 Starting multi-signal following detection...")
+        self.log_message("   Scanning: TPMS | Bluetooth/BLE | ANT+ | Meshtastic")
+        self.signal_btn.config(state='disabled', text='🔄 Starting...', bg='#ffaa00')
+        threading.Thread(target=self._signal_monitor_background, daemon=True).start()
+
+    def _signal_monitor_background(self):
+        """Run signal_monitor.py as a subprocess and stream its output to the log."""
+        try:
+            env = os.environ.copy()
+            env['CYT_TEST_MODE'] = 'true'
+
+            process = subprocess.Popen(
+                ['python3', './signal_monitor.py', '--report'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                env=env
+            )
+            self.running_processes['signal'] = process
+            self.signal_btn.config(
+                state='normal',
+                text="🛑 Stop Signal\nMonitor",
+                bg='#dc3545'
+            )
+            self.log_message("✅ Signal monitor running — press button again to stop")
+
+            for line in process.stdout:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                # Highlight alert lines
+                if any(kw in stripped for kw in
+                        ['FOLLOWING', 'PERSISTENCE', '***', 'ACTION']):
+                    self.log_message(f"🚨 {stripped}")
+                elif stripped.startswith('[Signal]'):
+                    pass  # Status line — skip to reduce noise
+                else:
+                    self.log_message(f"📡 {stripped}")
+
+        except Exception as e:
+            self.log_message(f"❌ Signal monitor error: {e}")
+        finally:
+            self.running_processes.pop('signal', None)
+            self.signal_btn.config(
+                state='normal',
+                text="📡 Signal\nMonitor",
+                bg='#17a2b8'
+            )
+            self.log_message("📡 Signal monitor stopped")
+
+            # Show report if one was generated
+            import glob
+            reports = glob.glob("surveillance_reports/signal_report_*.md")
+            if reports:
+                latest = max(reports, key=os.path.getctime)
+                self.log_message(f"📄 Report saved: {latest}")
+
     def quit_application(self):
         """Quit application with cleanup"""
         if messagebox.askyesno("Quit", "Are you sure you want to quit CYT?"):

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Logs and output (runtime-generated, not source)
+logs/
+analysis_logs/
+signal_logs/
+reports/
+surveillance_reports/
+kml_files/
+
+# Credentials and secrets
+*.key
+*.enc
+cyt_credentials.enc
+cyt_security.log
+
+# Editor / OS
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

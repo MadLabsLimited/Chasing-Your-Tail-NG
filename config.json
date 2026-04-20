@@ -23,5 +23,33 @@
     "lat_max": 37.0,
     "lon_min": -114.8,
     "lon_max": -109.0
+  },
+  "signals": {
+    "tpms": {
+      "enabled": true,
+      "frequencies": ["315M", "433.92M"],
+      "rtl_device": 0,
+      "_note": "Requires RTL-SDR dongle + rtl-433 (sudo apt install rtl-433)"
+    },
+    "bluetooth": {
+      "enabled": true,
+      "scan_ble": true,
+      "scan_classic": true,
+      "scan_interval": 30,
+      "ble_duplicates": true,
+      "_note": "Requires bluez (sudo apt install bluez). BLE scan needs sudo/CAP_NET_RAW"
+    },
+    "ant": {
+      "enabled": true,
+      "scan_duration": 15,
+      "_note": "Requires ANT+ USB stick + openant (pip install openant)"
+    },
+    "meshtastic": {
+      "enabled": true,
+      "serial_port": null,
+      "tcp_host": null,
+      "tcp_port": 4403,
+      "_note": "Requires LoRa device + meshtastic library (pip install meshtastic pypubsub). serial_port null = auto-detect USB"
+    }
   }
 }
